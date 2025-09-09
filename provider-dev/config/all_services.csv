@@ -1,0 +1,33 @@
+filename,path,operationId,formatted_op_id,verb,response_object,tags,formatted_tags,stackql_resource_name,stackql_method_name,stackql_verb,stackql_object_key,op_description
+database.yaml,/organizations/{organizationId}/databases,list_kv_databases,list_kv_databases,get,KvDatabase,database,database,databases,list_kv_databases,select,,List KV databases of an organization
+database.yaml,/organizations/{organizationId}/databases,create_kv_database,create_kv_database,post,KvDatabase,database,database,databases,create_kv_database,insert,,Create a KV database
+database.yaml,/databases/{databaseId},update_kv_database,update_kv_database,patch,KvDatabase,database,database,databases,update_kv_database,update,,Update KV database details
+database.yaml,/databases/{databaseId}/database_backups,enable_kv_backup,enable_kv_backup,post,EnableKvDatabaseBackupResponse,databaseBackup,database_backup,backups,enable_kv_backup,exec,,Enable a database backup
+database.yaml,/databases/{databaseId}/database_backups,list_kv_backups,list_kv_backups,get,KvDatabaseBackup,databaseBackup,database_backup,backups,list_kv_backups,select,,List database backups of a database
+database.yaml,/database_backups/{databaseBackupId},get_kv_backup,get_kv_backup,get,KvDatabaseBackup,databaseBackup,database_backup,backups,get_kv_backup,select,,Get database backup details
+database.yaml,/database_backups/{databaseBackupId},disable_kv_backup,disable_kv_backup,delete,DisableKvDatabaseBackupResponse,databaseBackup,database_backup,backups,disable_kv_backup,exec,,Disable a database backup
+deployment.yaml,/projects/{projectId}/deployments,list_deployments,list_deployments,get,Deployment,deployment,deployment,deployments,list_deployments,select,,List deployments of a project
+deployment.yaml,/projects/{projectId}/deployments,create_deployment,create_deployment,post,Deployment,deployment,deployment,deployments,create_deployment,insert,,Create a deployment
+deployment.yaml,/deployments/{deploymentId}/redeploy,redeploy_deployment,redeploy_deployment,post,Deployment,deployment,deployment,deployments,redeploy_deployment,exec,,Redeploy a deployment with different configuration
+deployment.yaml,/deployments/{deploymentId},get_deployment,get_deployment,get,Deployment,deployment,deployment,deployments,get_deployment,select,,Get deployment details
+deployment.yaml,/deployments/{deploymentId},delete_deployment,delete_deployment,delete,,deployment,deployment,deployments,delete_deployment,delete,,Delete a deployment
+deployment.yaml,/deployments/{deploymentId}/build_logs,get_build_logs,get_build_logs,get,BuildLogsResponseEntry,deployment,deployment,build_logs,get_build_logs,select,,Get build logs of a deployment
+deployment.yaml,/deployments/{deploymentId}/app_logs,get_app_logs,get_app_logs,get,AppLogsResponseEntry,deployment,deployment,app_logs,get_app_logs,select,,Get execution logs of a deployment
+deployment.yaml,/deployments/{deploymentId}/domains/{domain},attach_domain_to_deployment,attach_domain_to_deployment,put,AttachDomainResponse,deployment,deployment,domains,attach_domain_to_deployment,replace,,Attach a domain to a deployment
+deployment.yaml,/deployments/{deploymentId}/domains/{domain},detach_domain_from_deployment,detach_domain_from_deployment,delete,,deployment,deployment,domains,detach_domain_from_deployment,delete,,Detach a domain from a deployment
+domain.yaml,/organizations/{organizationId}/domains,list_domains,list_domains,get,Domain,domain,domain,domains,list_domains,select,,List domains of an organization
+domain.yaml,/organizations/{organizationId}/domains,create_domain,create_domain,post,Domain,domain,domain,domains,create_domain,insert,,Add a domain to an organization
+domain.yaml,/domains/{domainId},get_domain,get_domain,get,Domain,domain,domain,domains,get_domain,select,,Get domain details
+domain.yaml,/domains/{domainId},update_domain_association,update_domain_association,patch,,domain,domain,domains,update_domain_association,exec,,Associate a domain with a deployment
+domain.yaml,/domains/{domainId},delete_domain,delete_domain,delete,,domain,domain,domains,delete_domain,delete,,Delete a domain
+domain.yaml,/domains/{domainId}/verify,verify_domain,verify_domain,post,,domain,domain,domains,verify_domain,exec,,Verify ownership of a domain
+domain.yaml,/domains/{domainId}/certificates,add_domain_certificate,add_domain_certificate,post,,domain,domain,certificates,add_domain_certificate,exec,,Upload TLS certificate for a domain
+domain.yaml,/domains/{domainId}/certificates/provision,provision_domain_certificates,provision_domain_certificates,post,,domain,domain,certificates,provision_domain_certificates,exec,,Provision TLS certificates for a domain
+organization.yaml,/organizations/{organizationId},get_organization,get_organization,get,Organization,organization,organization,organizations,get_organization,select,,Get organization details
+organization.yaml,/organizations/{organizationId}/analytics,get_organization_analytics,get_organization_analytics,get,Analytics,organization,organization,analytics,get_organization_analytics,select,,Retrieve organization analytics
+project.yaml,/organizations/{organizationId}/projects,list_projects,list_projects,get,Project,project,project,projects,list_projects,select,,List projects of an organization
+project.yaml,/organizations/{organizationId}/projects,create_project,create_project,post,Project,project,project,projects,create_project,insert,,Create a project
+project.yaml,/projects/{projectId},get_project,get_project,get,Project,project,project,projects,get_project,select,,Get project details
+project.yaml,/projects/{projectId},update_project,update_project,patch,Project,project,project,projects,update_project,update,,Update project details
+project.yaml,/projects/{projectId},delete_project,delete_project,delete,,project,project,projects,delete_project,delete,,Delete a project
+project.yaml,/projects/{projectId}/analytics,get_project_analytics,get_project_analytics,get,Analytics,project,project,analytics,get_project_analytics,select,,Retrieve project analytics
