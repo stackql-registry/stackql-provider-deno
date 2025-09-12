@@ -138,7 +138,8 @@ values
 FROM deno.project.analytics
 WHERE projectId = '{{ projectId }}' -- required
 AND since = '{{ since }}' -- required
-AND until = '{{ until }}' -- required;
+AND until = '{{ until }}' -- required
+;
 ```
 </TabItem>
 </Tabs>

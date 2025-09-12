@@ -138,7 +138,8 @@ values
 FROM deno.organization.analytics
 WHERE organizationId = '{{ organizationId }}' -- required
 AND since = '{{ since }}' -- required
-AND until = '{{ until }}' -- required;
+AND until = '{{ until }}' -- required
+;
 ```
 </TabItem>
 </Tabs>

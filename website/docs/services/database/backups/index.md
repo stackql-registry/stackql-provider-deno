@@ -120,7 +120,7 @@ The following methods are available for this resource:
 <tr>
     <td><a href="#enable_kv_backup"><CopyableCode code="enable_kv_backup" /></a></td>
     <td><CopyableCode code="exec" /></td>
-    <td><a href="#parameter-databaseId"><code>databaseId</code></a></td>
+    <td><a href="#parameter-databaseId"><code>databaseId</code></a>, <a href="#parameter-endpoint"><code>endpoint</code></a>, <a href="#parameter-bucketName"><code>bucketName</code></a>, <a href="#parameter-bucketRegion"><code>bucketRegion</code></a>, <a href="#parameter-accessKeyId"><code>accessKeyId</code></a>, <a href="#parameter-secretAccessKey"><code>secretAccessKey</code></a>, <a href="#parameter-kind"><code>kind</code></a></td>
     <td></td>
     <td>This API allows you to enable a backup for a KV database. The backup can be<br />stored in your S3 bucket.<br /><br />Currently, only one backup can be enabled per database. When a second backup<br />is being configured, the API will return a `409 Conflict` error.</td>
 </tr>
@@ -178,7 +178,8 @@ SELECT
 id,
 status
 FROM deno.database.backups
-WHERE databaseId = '{{ databaseId }}' -- required;
+WHERE databaseId = '{{ databaseId }}' -- required
+;
 ```
 </TabItem>
 <TabItem value="get_kv_backup">
@@ -190,7 +191,8 @@ SELECT
 id,
 status
 FROM deno.database.backups
-WHERE databaseBackupId = '{{ databaseBackupId }}' -- required;
+WHERE databaseBackupId = '{{ databaseBackupId }}' -- required
+;
 ```
 </TabItem>
 </Tabs>
@@ -211,7 +213,18 @@ This API allows you to enable a backup for a KV database. The backup can be<br /
 
 ```sql
 EXEC deno.database.backups.enable_kv_backup 
-@databaseId='{{ databaseId }}' --required;
+@databaseId='{{ databaseId }}' --required 
+@@json=
+'{
+"endpoint": "{{ endpoint }}", 
+"bucketName": "{{ bucketName }}", 
+"bucketRegion": "{{ bucketRegion }}", 
+"accessKeyId": "{{ accessKeyId }}", 
+"secretAccessKey": "{{ secretAccessKey }}", 
+"prefix": "{{ prefix }}", 
+"kind": "{{ kind }}"
+}'
+;
 ```
 </TabItem>
 <TabItem value="disable_kv_backup">
@@ -220,7 +233,8 @@ This API allows you to disable a backup for a KV database.
 
 ```sql
 EXEC deno.database.backups.disable_kv_backup 
-@databaseBackupId='{{ databaseBackupId }}' --required;
+@databaseBackupId='{{ databaseBackupId }}' --required
+;
 ```
 </TabItem>
 </Tabs>

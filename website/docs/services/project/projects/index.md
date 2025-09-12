@@ -248,7 +248,8 @@ AND page = '{{ page }}'
 AND limit = '{{ limit }}'
 AND q = '{{ q }}'
 AND sort = '{{ sort }}'
-AND order = '{{ order }}';
+AND order = '{{ order }}'
+;
 ```
 </TabItem>
 <TabItem value="get_project">
@@ -263,7 +264,8 @@ createdAt,
 description,
 updatedAt
 FROM deno.project.projects
-WHERE projectId = '{{ projectId }}' -- required;
+WHERE projectId = '{{ projectId }}' -- required
+;
 ```
 </TabItem>
 </Tabs>
@@ -312,16 +314,14 @@ updatedAt
       description: Required parameter for the projects resource.
     - name: name
       value: string
-      description: >
+      description: |
         The name of the project. This must be globally unique. If this is `null`,
-a random unique name will be generated.
-        
+        a random unique name will be generated.
     - name: description
       value: string
-      description: >
+      description: |
         The description of the project. If this is `null`, an empty string will be
-set.
-        
+        set.
 ```
 </TabItem>
 </Tabs>
@@ -371,7 +371,8 @@ No description available.
 
 ```sql
 DELETE FROM deno.project.projects
-WHERE projectId = '{{ projectId }}' --required;
+WHERE projectId = '{{ projectId }}' --required
+;
 ```
 </TabItem>
 </Tabs>

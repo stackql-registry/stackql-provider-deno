@@ -192,7 +192,8 @@ AND until = '{{ until }}'
 AND limit = '{{ limit }}'
 AND sort = '{{ sort }}'
 AND order = '{{ order }}'
-AND cursor = '{{ cursor }}';
+AND cursor = '{{ cursor }}'
+;
 ```
 </TabItem>
 </Tabs>

@@ -303,7 +303,8 @@ AND page = '{{ page }}'
 AND limit = '{{ limit }}'
 AND q = '{{ q }}'
 AND sort = '{{ sort }}'
-AND order = '{{ order }}';
+AND order = '{{ order }}'
+;
 ```
 </TabItem>
 <TabItem value="get_deployment">
@@ -323,7 +324,8 @@ requestTimeout,
 status,
 updatedAt
 FROM deno.deployment.deployments
-WHERE deploymentId = '{{ deploymentId }}' -- required;
+WHERE deploymentId = '{{ deploymentId }}' -- required
+;
 ```
 </TabItem>
 </Tabs>
@@ -359,13 +361,13 @@ data__enableCron,
 projectId
 )
 SELECT 
-'{{ entryPointUrl }}' --required,
+'{{ entryPointUrl }}' /* required */,
 '{{ importMapUrl }}',
 '{{ lockFileUrl }}',
 '{{ compilerOptions }}',
-'{{ assets }}' --required,
+'{{ assets }}' /* required */,
 '{{ domains }}',
-'{{ envVars }}' --required,
+'{{ envVars }}' /* required */,
 '{{ databases }}',
 {{ requestTimeout }},
 '{{ permissions }}',
@@ -397,128 +399,99 @@ updatedAt
       description: Required parameter for the deployments resource.
     - name: entryPointUrl
       value: string
-      description: >
+      description: |
         An URL of the entry point of the application.
-This is the file that will be executed when the deployment is invoked.
-        
+        This is the file that will be executed when the deployment is invoked.
     - name: importMapUrl
       value: string
-      description: >
+      description: |
         An URL of the import map file.
-
-If `null` is given, import map auto-discovery logic will be performed,
-where it looks for Deno's config file (i.e. `deno.json` or `deno.jsonc`)
-which may contain an embedded import map or a path to an import map file.
-If found, that import map will be used.
-
-If an empty string is given, no import map will be used.
-        
+        If `null` is given, import map auto-discovery logic will be performed,
+        where it looks for Deno's config file (i.e. `deno.json` or `deno.jsonc`)
+        which may contain an embedded import map or a path to an import map file.
+        If found, that import map will be used.
+        If an empty string is given, no import map will be used.
     - name: lockFileUrl
       value: string
-      description: >
+      description: |
         An URL of the lock file.
-
-If `null` is given, lock file auto-discovery logic will be performed,
-where it looks for Deno's config file (i.e. `deno.json` or `deno.jsonc`)
-which may contain a path to a lock file or boolean value, such as `"lock":
-false` or `"lock": "my-lock.lock"`. If a config file is found, the
-semantics of the lock field is the same as the Deno CLI, so refer to [the
-CLI doc page](https://docs.deno.com/runtime/manual/basics/modules/integrity_checking#auto-generated-lockfile).
-
-If an empty string is given, no lock file will be used.
-        
+        If `null` is given, lock file auto-discovery logic will be performed,
+        where it looks for Deno's config file (i.e. `deno.json` or `deno.jsonc`)
+        which may contain a path to a lock file or boolean value, such as `"lock":
+        false` or `"lock": "my-lock.lock"`. If a config file is found, the
+        semantics of the lock field is the same as the Deno CLI, so refer to [the
+        CLI doc page](https://docs.deno.com/runtime/manual/basics/modules/integrity_checking#auto-generated-lockfile).
+        If an empty string is given, no lock file will be used.
     - name: compilerOptions
       value: object
-      description: >
+      description: |
         Compiler options to be used when building the deployment.
-
-If `null` is given, Deno's config file (i.e. `deno.json` or `deno.jsonc`)
-will be auto-discovered, which may contain a `compilerOptions` field. If
-found, that compiler options will be applied.
-
-If an empty object `{}` is given, [the default compiler options](https://docs.deno.com/runtime/manual/advanced/typescript/configuration#how-deno-uses-a-configuration-file)
-will be applied.
-        
+        If `null` is given, Deno's config file (i.e. `deno.json` or `deno.jsonc`)
+        will be auto-discovered, which may contain a `compilerOptions` field. If
+        found, that compiler options will be applied.
+        If an empty object `{}` is given, [the default compiler options](https://docs.deno.com/runtime/manual/advanced/typescript/configuration#how-deno-uses-a-configuration-file)
+        will be applied.
     - name: assets
       value: object
-      description: >
+      description: |
         A map whose key represents a file path, and the value is an asset that
-composes the deployment.
-
-Each asset is one of the following three kinds:
-
-1. A file with content data (which is UTF-8 for text, or base64 for binary)
-2. A file with a git sha1 hash of the content
-3. A symbolic link to another asset
-
-Assets that were uploaded in some of the previous deployments don't need to
-be uploaded again. In this case, in order to identify the asset, just provide the
-git SHA-1 hash of the content (use `git hash-object -t 'blob' <file>` command to generate).
-        
+        composes the deployment.
+        Each asset is one of the following three kinds:
+        1. A file with content data (which is UTF-8 for text, or base64 for binary)
+        2. A file with a git sha1 hash of the content
+        3. A symbolic link to another asset
+        Assets that were uploaded in some of the previous deployments don't need to
+        be uploaded again. In this case, in order to identify the asset, just provide the
+        git SHA-1 hash of the content (use `git hash-object -t 'blob' <file>` command to generate).
     - name: domains
       value: array
-      description: >
+      description: |
         A list of domains that will be attached to the deployment once it's
-successfully deployed.
-
-If this field is omitted or `null` is provided, the default domain will be
-attached to the deployment, which looks like `projectname-deploymentid.deno.dev`.
-
-If an empty list is provided, no domain will be attached to the deployment.
-In this case, the default one will not get attached either.
-
-If a list is provided, only the domains in the list will be attached, but
-the default domain will not.
-        
+        successfully deployed.
+        If this field is omitted or `null` is provided, the default domain will be
+        attached to the deployment, which looks like `projectname-deploymentid.deno.dev`.
+        If an empty list is provided, no domain will be attached to the deployment.
+        In this case, the default one will not get attached either.
+        If a list is provided, only the domains in the list will be attached, but
+        the default domain will not.
     - name: envVars
       value: object
-      description: >
+      description: |
         A dictionary of environment variables to be set in the runtime environment
-of the deployment.
-        
+        of the deployment.
     - name: databases
       value: object
-      description: >
+      description: |
         KV database ID mappings to associate with the deployment.
-
-A key represents a KV database name (e.g. `"default"`), and a value is a
-KV database ID.
-
-Currently, only `"default"` database is supported. If any other database
-name is specified, that will be rejected.
-
-If not provided, the deployment will be created with no KV database
-attached.
-        
+        A key represents a KV database name (e.g. `"default"`), and a value is a
+        KV database ID.
+        Currently, only `"default"` database is supported. If any other database
+        name is specified, that will be rejected.
+        If not provided, the deployment will be created with no KV database
+        attached.
     - name: requestTimeout
       value: integer
-      description: >
+      description: |
         The wall-clock timeout in milliseconds for requests to the deployment.
-
-If not provided, the system default value will be used.
-        
+        If not provided, the system default value will be used.
     - name: permissions
       value: object
-      description: >
+      description: |
         Permissions to be set for the deployment.
-
-Currently only `net` is supported, where you can specify a list of IP
-addresses and/or hostnames that the deployment is allowed to make outbound
-network requests to.
-        
+        Currently only `net` is supported, where you can specify a list of IP
+        addresses and/or hostnames that the deployment is allowed to make outbound
+        network requests to.
     - name: description
       value: string
-      description: >
+      description: |
         A description of the created deployment. If not provided, an empty string
-will be set.
-        
+        will be set.
     - name: enableCron
       value: boolean
-      description: >
+      description: |
         Enables cron functionality for this deployment. Requires a database to be attached.
-When multiple projects share the same database, only the first project to enable crons
-will have access to cron management. Other projects sharing the database cannot use crons.
-        
+        When multiple projects share the same database, only the first project to enable crons
+        will have access to cron management. Other projects sharing the database cannot use crons.
 ```
 </TabItem>
 </Tabs>
@@ -538,7 +511,8 @@ No description available.
 
 ```sql
 DELETE FROM deno.deployment.deployments
-WHERE deploymentId = '{{ deploymentId }}' --required;
+WHERE deploymentId = '{{ deploymentId }}' --required
+;
 ```
 </TabItem>
 </Tabs>
@@ -566,7 +540,8 @@ EXEC deno.deployment.deployments.redeploy_deployment
 "requestTimeout": {{ requestTimeout }}, 
 "permissions": "{{ permissions }}", 
 "description": "{{ description }}"
-}';
+}'
+;
 ```
 </TabItem>
 </Tabs>

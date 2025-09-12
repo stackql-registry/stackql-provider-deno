@@ -193,7 +193,8 @@ AND page = '{{ page }}'
 AND limit = '{{ limit }}'
 AND q = '{{ q }}'
 AND sort = '{{ sort }}'
-AND order = '{{ order }}';
+AND order = '{{ order }}'
+;
 ```
 </TabItem>
 </Tabs>
@@ -240,10 +241,9 @@ updatedAt
       description: Required parameter for the databases resource.
     - name: description
       value: string
-      description: >
+      description: |
         The description of the KV database. If this is `null`, an empty string
-will be set.
-        
+        will be set.
 ```
 </TabItem>
 </Tabs>

@@ -133,7 +133,8 @@ This API disassociates a domain from a deployment. Once this operation is<br />c
 ```sql
 DELETE FROM deno.deployment.domains
 WHERE deploymentId = '{{ deploymentId }}' --required
-AND domain = '{{ domain }}' --required;
+AND domain = '{{ domain }}' --required
+;
 ```
 </TabItem>
 </Tabs>
