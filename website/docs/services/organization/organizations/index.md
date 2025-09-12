@@ -138,7 +138,8 @@ name,
 createdAt,
 updatedAt
 FROM deno.organization.organizations
-WHERE organizationId = '{{ organizationId }}' -- required;
+WHERE organizationId = '{{ organizationId }}' -- required
+;
 ```
 </TabItem>
 </Tabs>

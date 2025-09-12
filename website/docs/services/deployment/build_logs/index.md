@@ -126,7 +126,8 @@ SELECT
 level,
 message
 FROM deno.deployment.build_logs
-WHERE deploymentId = '{{ deploymentId }}' -- required;
+WHERE deploymentId = '{{ deploymentId }}' -- required
+;
 ```
 </TabItem>
 </Tabs>

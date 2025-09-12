@@ -107,7 +107,8 @@ EXEC deno.domain.certificates.add_domain_certificate
 '{
 "privateKey": "{{ privateKey }}", 
 "certificateChain": "{{ certificateChain }}"
-}';
+}'
+;
 ```
 </TabItem>
 <TabItem value="provision_domain_certificates">
@@ -116,7 +117,8 @@ This API begins the provisioning of TLS certificates for a domain.<br /><br />No
 
 ```sql
 EXEC deno.domain.certificates.provision_domain_certificates 
-@domainId='{{ domainId }}' --required;
+@domainId='{{ domainId }}' --required
+;
 ```
 </TabItem>
 </Tabs>

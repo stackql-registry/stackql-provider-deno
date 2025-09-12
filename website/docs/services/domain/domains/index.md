@@ -332,7 +332,8 @@ AND page = '{{ page }}'
 AND limit = '{{ limit }}'
 AND q = '{{ q }}'
 AND sort = '{{ sort }}'
-AND order = '{{ order }}';
+AND order = '{{ order }}'
+;
 ```
 </TabItem>
 <TabItem value="get_domain">
@@ -354,7 +355,8 @@ provisioningStatus,
 token,
 updatedAt
 FROM deno.domain.domains
-WHERE domainId = '{{ domainId }}' -- required;
+WHERE domainId = '{{ domainId }}' -- required
+;
 ```
 </TabItem>
 </Tabs>
@@ -379,7 +381,7 @@ data__domain,
 organizationId
 )
 SELECT 
-'{{ domain }}' --required,
+'{{ domain }}' /* required */,
 '{{ organizationId }}'
 RETURNING
 id,
@@ -427,7 +429,8 @@ No description available.
 
 ```sql
 DELETE FROM deno.domain.domains
-WHERE domainId = '{{ domainId }}' --required;
+WHERE domainId = '{{ domainId }}' --required
+;
 ```
 </TabItem>
 </Tabs>
@@ -452,7 +455,8 @@ EXEC deno.domain.domains.update_domain_association
 @@json=
 '{
 "deploymentId": "{{ deploymentId }}"
-}';
+}'
+;
 ```
 </TabItem>
 <TabItem value="verify_domain">
@@ -461,7 +465,8 @@ This API triggers the ownership verification of a domain. It should be<br />call
 
 ```sql
 EXEC deno.domain.domains.verify_domain 
-@domainId='{{ domainId }}' --required;
+@domainId='{{ domainId }}' --required
+;
 ```
 </TabItem>
 </Tabs>
