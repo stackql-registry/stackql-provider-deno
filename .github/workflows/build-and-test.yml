@@ -1,0 +1,151 @@
+name: build-and-test
+
+# Build the deno provider from the committed spec snapshot and run the
+# credential-free test layers on each push / PR; the live smoke suite runs
+# only where the Deno Deploy token secret is configured; a scheduled
+# spec-drift job re-downloads the upstream OpenAPI document and opens an
+# issue when it has moved (Deno serves a single unversioned document - drift
+# is expected and must be reviewed, never silently regenerated).
+
+on:
+  push:
+    branches: [main, 'feature/**']
+    paths-ignore: ['website/**']
+  pull_request:
+    branches: [main]
+    paths-ignore: ['website/**']
+  schedule:
+    - cron: '23 3 * * 1'   # weekly spec-drift check (Monday 03:23 UTC)
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # puts the latest stackql on PATH; bin/start-server.sh resolves it from
+      # there (no wrapper - the real binary is needed)
+      - name: Install stackql
+        uses: stackql/setup-stackql@v2
+
+      - name: stackql version
+        run: stackql --version
+
+      - name: Build provider from the committed spec snapshot
+        run: make build SPEC_REFRESH=0
+
+      - name: Fail on uncommitted generation drift
+        run: |
+          git add -N .
+          if ! git diff --quiet -- provider-dev/openapi provider-dev/config provider-dev/source provider-dev/downloaded/openapi.json; then
+            echo "Generated output differs from the committed artifacts - run 'make build' and commit."
+            git diff --stat -- provider-dev/openapi provider-dev/config provider-dev/source provider-dev/downloaded/openapi.json
+            exit 1
+          fi
+
+      - name: Offline validation
+        run: make test-offline
+
+      - name: Meta-route tests
+        run: make meta-test
+
+      - name: Generate docs (sanity - the site build runs on the web workflows)
+        run: make docs
+
+  smoke:
+    # secret-gated live smoke suite against the test organization; skipped
+    # with a notice when the secret is not configured (forks, PRs from
+    # outside). The suite creates and deletes a stackql-smoke-* app, layer
+    # and domain and deploys one hello-world revision - free tier, nothing
+    # billable.
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name != 'pull_request' && github.event_name != 'schedule'
+    env:
+      DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Live smoke suite (local build, exec + pgwire)
+        if: env.DENO_DEPLOY_TOKEN != ''
+        run: |
+          echo "DENO_DEPLOY_TOKEN=${DENO_DEPLOY_TOKEN}" > .env
+          make smoke-test MODE=both
+
+      - name: Live smoke skipped (no credentials)
+        if: env.DENO_DEPLOY_TOKEN == ''
+        run: |
+          echo "::notice title=Live smoke suite skipped::DENO_DEPLOY_TOKEN secret is not configured - the live smoke suite did not run. Credential-free coverage still ran via the offline validation and the meta-route gate."
+
+  spec-drift:
+    # Re-download the upstream document on a schedule and on demand, and open
+    # an issue when the preprocessed OpenAPI output differs from the committed
+    # snapshot.
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch and compare against the committed snapshot
+        id: drift
+        run: |
+          make spec preprocess
+          if git diff --quiet -- provider-dev/downloaded/openapi.json; then
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- provider-dev/downloaded > drift.txt || true
+            node -e "const s=require('./provider-dev/downloaded/deno-api-v2.json');console.log('upstream spec version', s.info.version)" >> drift.txt
+            cat drift.txt
+          fi
+
+      - name: Report drift
+        if: steps.drift.outputs.drift == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const stat = fs.existsSync('drift.txt') ? fs.readFileSync('drift.txt', 'utf8') : '(diff unavailable)';
+            const title = 'Deno Deploy API spec drift detected';
+            const body = 'The document served at https://api.deno.com/v2/openapi.json no longer matches the committed snapshot in provider-dev/downloaded/.\n\n```\n' + stat + '\n```\nRun `make all`, review the generated diff (new operations reported by `make split` / `make mappings`, changed schemas), update NOTES.md, and commit.';
+            await core.summary.addHeading(title).addCodeBlock(stat).write();
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: 'spec-drift'
+            });
+            if (issues.some(i => i.title === title)) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['spec-drift']
+            });

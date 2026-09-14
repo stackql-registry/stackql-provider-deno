@@ -1,0 +1,339 @@
+# Tier 1 smoke tests: the queries and mutations a user would expect to "just
+# work" against a freshly built (or freshly published) deno provider.
+#
+# Each entry has:
+#   name           - test id (used in pytest output)
+#   sql            - SQL to execute. ${VAR} is substituted from env / defaults
+#                    (provider.yaml), values captured by earlier cases, and the
+#                    computed ${TEST_SINCE} / ${TEST_UNTIL} timestamps.
+#   assertions:
+#     min_rows         - result set must have at least this many rows (default 1)
+#     required_columns - every named column must be present on every row
+#     row_predicates   - list of Python expressions evaluated with `rows` and `r`
+#                        (r = rows[0]) in scope. Allowed builtins: all, any, len,
+#                        int, float, str, bool, isinstance, abs, min, max, sum,
+#                        range, next, sorted, set, list, dict, tuple. All must be truthy.
+#   poll (optional)    - re-run the SQL until `until` holds (timeout_s, interval_s)
+#   capture (optional) - VAR: expression over rows / r, stored for later cases
+#   xfail (optional)   - flag known provider/binary bugs without losing visibility:
+#     reason: "..."        (required; printed in pytest output)
+#     modes: [pgwire]      (optional; if omitted, xfails in all modes)
+#
+# Cost: zero. The suite creates two apps, one layer and one hello-world
+# revision (all named stackql-smoke-*), promotes the revision, and deletes
+# everything again at the end; the Deno Deploy free tier covers all of it and
+# nothing metered is left behind. Domains are read-only here because the
+# organization's plan includes zero custom domains. Cases run in file order,
+# so every delete follows its insert.
+#
+# Keep this list small (~35 cases). The goal is "is the provider broken?",
+# not exhaustive coverage.
+
+# --- apps: create the disposable apps ---------------------------------------
+
+- name: app_insert
+  sql: |
+    INSERT INTO deno.apps.apps (slug, labels, config)
+    SELECT '${TEST_APP_SLUG}',
+      '{"custom.purpose": "stackql-smoke"}',
+      '{"runtime": {"type": "dynamic", "entrypoint": "main.ts"}}'
+  assertions:
+    min_rows: 0
+
+# a second app so the pagination case below spans two pages
+- name: app_insert_b
+  sql: |
+    INSERT INTO deno.apps.apps (slug, labels)
+    SELECT '${TEST_APP_SLUG_B}', '{"custom.purpose": "stackql-smoke"}'
+  assertions:
+    min_rows: 0
+
+- name: list_apps
+  sql: SELECT id, slug, labels, layers, created_at FROM deno.apps.apps
+  assertions:
+    min_rows: 2
+    required_columns: [id, slug, layers, created_at]
+    row_predicates:
+      - "any(row['slug'] == '${TEST_APP_SLUG}' for row in rows)"
+      - "any(row['slug'] == '${TEST_APP_SLUG_B}' for row in rows)"
+  capture:
+    TEST_APP_ID: "next(row['id'] for row in rows if row['slug'] == '${TEST_APP_SLUG}')"
+
+- name: get_app_by_slug
+  sql: |
+    SELECT id, slug, labels, config, env_vars
+    FROM deno.apps.apps
+    WHERE app = '${TEST_APP_SLUG}'
+  assertions:
+    min_rows: 1
+    required_columns: [id, slug, config, env_vars]
+    row_predicates:
+      - "r['slug'] == '${TEST_APP_SLUG}' and r['id'] == '${TEST_APP_ID}'"
+      - "'main.ts' in str(r['config'])"
+
+- name: get_app_by_id
+  sql: |
+    SELECT id, slug
+    FROM deno.apps.apps
+    WHERE app = '${TEST_APP_ID}'
+  assertions:
+    min_rows: 1
+    row_predicates:
+      - "r['slug'] == '${TEST_APP_SLUG}'"
+
+# limit=1 forces one item per page; the Link header rel="next" traversal
+# (which crosses to the console.deno.com host) must bring back every app, so
+# the count matches the unpaged listing.
+- name: pagination_follows_link_header
+  sql: |
+    SELECT 'paged' AS kind, count(*) AS n FROM deno.apps.apps WHERE "limit" = 1
+    UNION ALL
+    SELECT 'unpaged' AS kind, count(*) AS n FROM deno.apps.apps
+  assertions:
+    min_rows: 2
+    row_predicates:
+      - "int(rows[0]['n']) == int(rows[1]['n']) and int(rows[0]['n']) >= 2"
+
+- name: app_update_labels
+  sql: |
+    UPDATE deno.apps.apps
+    SET labels = '{"custom.purpose": "stackql-smoke", "custom.stage": "updated"}'
+    WHERE app = '${TEST_APP_SLUG}'
+  assertions:
+    min_rows: 0
+
+- name: app_labels_after_update
+  sql: SELECT slug, labels FROM deno.apps.apps WHERE app = '${TEST_APP_SLUG}'
+  assertions:
+    min_rows: 1
+    row_predicates:
+      - "'updated' in str(r['labels'])"
+
+# --- layers and environment variables ---------------------------------------
+
+- name: layer_insert
+  sql: |
+    INSERT INTO deno.layers.layers (slug, description, env_vars)
+    SELECT '${TEST_LAYER_SLUG}', 'StackQL smoke layer',
+      '[{"key": "STACKQL_SMOKE", "value": "1"}]'
+  assertions:
+    min_rows: 0
+
+- name: list_layers
+  sql: SELECT id, slug, app_count, created_at FROM deno.layers.layers
+  assertions:
+    min_rows: 1
+    required_columns: [id, slug, app_count, created_at]
+    row_predicates:
+      - "any(row['slug'] == '${TEST_LAYER_SLUG}' for row in rows)"
+
+- name: get_layer
+  sql: |
+    SELECT id, slug, env_vars, app_count
+    FROM deno.layers.layers
+    WHERE layer = '${TEST_LAYER_SLUG}'
+  assertions:
+    min_rows: 1
+    row_predicates:
+      - "r['slug'] == '${TEST_LAYER_SLUG}'"
+      - "'STACKQL_SMOKE' in str(r['env_vars'])"
+
+# PATCH env_vars is a deep merge: the new variable is added, the old one kept
+- name: layer_update_env_vars
+  sql: |
+    UPDATE deno.layers.layers
+    SET description = 'StackQL smoke layer (updated)',
+        env_vars = '[{"key": "STACKQL_SMOKE_2", "value": "2"}]'
+    WHERE layer = '${TEST_LAYER_SLUG}'
+  assertions:
+    min_rows: 0
+
+- name: layer_env_vars_via_json_each
+  sql: |
+    SELECT l.slug, json_extract(v.value, '$.key') AS key, json_extract(v.value, '$.value') AS val
+    FROM deno.layers.layers l, json_each(l.env_vars) v
+    WHERE l.layer = '${TEST_LAYER_SLUG}'
+  assertions:
+    min_rows: 2
+    required_columns: [slug, key, val]
+    row_predicates:
+      - "any(row['key'] == 'STACKQL_SMOKE_2' and str(row['val']) == '2' for row in rows)"
+
+- name: app_attach_layer
+  sql: |
+    UPDATE deno.apps.apps
+    SET layers = '["${TEST_LAYER_SLUG}"]'
+    WHERE app = '${TEST_APP_SLUG}'
+  assertions:
+    min_rows: 0
+
+- name: layer_apps
+  sql: |
+    SELECT id, slug, layer_position
+    FROM deno.layers.layer_apps
+    WHERE layer = '${TEST_LAYER_SLUG}'
+  assertions:
+    min_rows: 1
+    required_columns: [id, slug, layer_position]
+    row_predicates:
+      - "any(row['slug'] == '${TEST_APP_SLUG}' for row in rows)"
+
+# --- revisions: deploy a hello-world and read everything it produced ---------
+# The asset map is a JSON object column; JavaScript source uses single quotes
+# (doubled for SQL) so no backslash escaping is needed inside the SQL string.
+
+- name: revision_deploy
+  sql: |
+    INSERT INTO deno.revisions.revisions (app, assets, config, labels)
+    SELECT '${TEST_APP_SLUG}',
+      '{"main.ts": {"kind": "file", "encoding": "utf-8", "content": "Deno.serve(() => new Response(''Hello from StackQL''));"}}',
+      '{"runtime": {"type": "dynamic", "entrypoint": "main.ts"}}',
+      '{"custom.source": "stackql-smoke"}'
+  assertions:
+    min_rows: 0
+
+- name: revision_build_completes
+  sql: |
+    SELECT id, status, labels, created_at, build_finished_at
+    FROM deno.revisions.revisions
+    WHERE app = '${TEST_APP_SLUG}'
+  poll:
+    until: "len(rows) >= 1 and all(row['status'] in ('succeeded', 'failed', 'skipped') for row in rows)"
+    timeout_s: 240
+    interval_s: 5
+  assertions:
+    min_rows: 1
+    required_columns: [id, status, created_at]
+    row_predicates:
+      - "r['status'] == 'succeeded'"
+  capture:
+    TEST_REVISION_ID: "r['id']"
+
+- name: get_revision
+  sql: |
+    SELECT id, status, config, env_vars, timelines, build_finished_at
+    FROM deno.revisions.revisions
+    WHERE revision = '${TEST_REVISION_ID}'
+  assertions:
+    min_rows: 1
+    required_columns: [id, status, config, timelines]
+    row_predicates:
+      - "r['id'] == '${TEST_REVISION_ID}' and r['status'] == 'succeeded'"
+      - "'main.ts' in str(r['config'])"
+
+- name: revisions_status_pushdown
+  sql: |
+    SELECT id, status
+    FROM deno.revisions.revisions
+    WHERE app = '${TEST_APP_SLUG}' AND status = 'succeeded'
+  assertions:
+    min_rows: 1
+    row_predicates:
+      - "all(row['status'] == 'succeeded' for row in rows)"
+
+# JSON Lines stream -> one row per log line (post_process transform)
+- name: build_logs_jsonl_rows
+  sql: |
+    SELECT timestamp, level, message, step
+    FROM deno.revisions.build_logs
+    WHERE revision = '${TEST_REVISION_ID}'
+  assertions:
+    min_rows: 3
+    required_columns: [timestamp, level, message, step]
+    row_predicates:
+      - "any(row['step'] == 'deploying' for row in rows)"
+
+- name: build_progress_jsonl_rows
+  sql: |
+    SELECT queued, preparing, installing, building, deploying
+    FROM deno.revisions.build_progress
+    WHERE revision = '${TEST_REVISION_ID}'
+  assertions:
+    min_rows: 1
+    required_columns: [queued, preparing, building, deploying]
+    row_predicates:
+      - "'succeeded' in str(r['deploying'])"
+
+- name: revision_timelines
+  sql: |
+    SELECT slug, partition, domains
+    FROM deno.revisions.timelines
+    WHERE revision = '${TEST_REVISION_ID}'
+  assertions:
+    min_rows: 1
+    required_columns: [slug, partition, domains]
+    row_predicates:
+      - "any(row['slug'] == 'production' for row in rows)"
+
+# analytics table envelope pivoted to one row per 15-minute bucket
+- name: app_analytics_pivot
+  sql: |
+    SELECT time, request_count, cpu_seconds, network_egress_bytes, kv_read_units
+    FROM deno.apps.analytics
+    WHERE app = '${TEST_APP_SLUG}' AND since = '${TEST_SINCE}' AND until = '${TEST_UNTIL}'
+  assertions:
+    min_rows: 1
+    required_columns: [time, request_count, cpu_seconds, network_egress_bytes, kv_read_units]
+
+# cursor pagination (cursor / next_cursor) instead of the Link header; `end`
+# is a SQL keyword so it is double-quoted
+- name: runtime_logs
+  sql: |
+    SELECT timestamp, level, message, revision_id
+    FROM deno.apps.runtime_logs
+    WHERE app = '${TEST_APP_SLUG}' AND start = '${TEST_SINCE}' AND "end" = '${TEST_UNTIL}'
+  assertions:
+    min_rows: 0
+    required_columns: [timestamp, level, message]
+
+# --- lifecycle op via EXEC ---------------------------------------------------
+
+- name: exec_promote
+  sql: |
+    EXEC deno.revisions.revisions.promote @revision = '${TEST_REVISION_ID}'
+  assertions:
+    min_rows: 0
+
+# --- domains (read only: the plan includes zero custom domains) -------------
+
+- name: list_domains
+  sql: SELECT id, domain, kind, is_validated, provisioning_status FROM deno.domains.domains
+  assertions:
+    min_rows: 0
+    required_columns: [id, domain, kind, is_validated]
+
+# --- teardown ---------------------------------------------------------------
+
+- name: app_detach_layer
+  sql: UPDATE deno.apps.apps SET layers = '[]' WHERE app = '${TEST_APP_SLUG}'
+  assertions:
+    min_rows: 0
+
+- name: layer_delete
+  sql: DELETE FROM deno.layers.layers WHERE layer = '${TEST_LAYER_SLUG}'
+  assertions:
+    min_rows: 0
+
+- name: app_delete
+  sql: DELETE FROM deno.apps.apps WHERE app = '${TEST_APP_SLUG}'
+  assertions:
+    min_rows: 0
+
+- name: app_b_delete
+  sql: DELETE FROM deno.apps.apps WHERE app = '${TEST_APP_SLUG_B}'
+  assertions:
+    min_rows: 0
+
+- name: apps_gone_after_delete
+  sql: SELECT id, slug FROM deno.apps.apps
+  assertions:
+    min_rows: 0
+    row_predicates:
+      - "all(row['slug'] not in ('${TEST_APP_SLUG}', '${TEST_APP_SLUG_B}') for row in rows)"
+
+- name: layers_gone_after_delete
+  sql: SELECT id, slug FROM deno.layers.layers
+  assertions:
+    min_rows: 0
+    row_predicates:
+      - "all(row['slug'] != '${TEST_LAYER_SLUG}' for row in rows)"

@@ -9,7 +9,9 @@ keywords:
   - infrastructure-as-code
   - configuration-as-data
   - cloud inventory
-description: Query, deploy and manage Deno Deploy resources using SQL
+  - serverless
+  - edge
+description: Query, deploy and manage Deno Deploy apps, revisions, layers, environment variables, domains and databases using SQL
 custom_edit_url: null
 image: /img/stackql-deno-provider-featured-image.png
 id: 'provider-intro'
@@ -17,4 +19,4 @@ id: 'provider-intro'
 
 import CopyableCode from '@site/src/components/CopyableCode/CopyableCode';
 
-Deno Deploy provider for StackQL, enabling SQL-based management of your serverless JavaScript/TypeScript deployments, projects, domains, and KV databases in a globally distributed edge runtime.
+Query, provision and operate Deno Deploy using SQL - apps and their configuration, revisions (deployments) with their build logs, build progress and timelines, layers for shared environment variables, custom domains and TLS certificates, database instances, usage analytics and runtime logs. Built from the Deno Deploy API v2.

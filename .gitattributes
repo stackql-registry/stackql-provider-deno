@@ -1,0 +1,9 @@
+# Normalize line endings: everything text is LF in the repo and on checkout
+# (the shell scripts and node scripts run under WSL/Linux CI).
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.jpg binary
+*.gif binary
+*.woff binary
+*.woff2 binary

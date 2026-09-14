@@ -1,3 +1,7 @@
+# stackql
+stackql
+/.stackql
+
 main.zip
 
 # Byte-compiled / optimized / DLL files
@@ -46,9 +50,7 @@ output/
 .stackql/
 stackql
 stackql-zip
-stackql-aws-cloud-shell.sh
-stackql-azure-cloud-shell.sh
-stackql-google-cloud-shell.sh
+stackql-*.sh
 .env
 nohup.out
 
@@ -82,5 +84,11 @@ nohup.out
 # Ignore coverage and test output
 **/coverage/
 **/test-output/
-# Ignore everything in source directory except .gitkeep
-source/*
+
+# provider-dev test harness
+provider-dev/test/.bin/
+provider-dev/test/.venv/
+
+# meta-test output
+meta-test.log
+stackql-server.log
