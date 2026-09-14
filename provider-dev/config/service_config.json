@@ -1,0 +1,6 @@
+{
+  "pagination": {
+    "requestToken": {"key": "", "location": "request"},
+    "responseToken": {"key": "Link", "location": "header"}
+  }
+}

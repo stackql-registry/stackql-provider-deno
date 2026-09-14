@@ -1,0 +1,1 @@
+{"auth": {"type": "bearer", "credentialsenvvar": "DENO_DEPLOY_TOKEN"}}

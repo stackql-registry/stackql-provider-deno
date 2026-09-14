@@ -1,0 +1,32 @@
+# Per-provider settings consumed by conftest.py.
+# This file is the only piece (besides tier1.yaml) that should differ between
+# providers when reusing this test framework as an archetype.
+
+provider_name: deno
+
+# Registry root - path relative to the repo root that contains src/<provider>/...
+# (ignored with --live, which uses the public registry)
+registry_root: provider-dev/openapi
+
+# Auth env vars that MUST be set for tier 1 tests to run.
+# If any are missing, the test session fails fast with a clear message.
+# The v2 API token is organization-scoped, so no organization id is needed.
+required_env:
+  - DENO_DEPLOY_TOKEN
+
+# Optional env vars used inside tier1.yaml ${VAR} substitutions.
+# Defaults are applied if the env var is not set. Everything the suite
+# creates carries the stackql-smoke- prefix and is deleted again at the end
+# of the run (and swept at the start of the next one).
+test_env_defaults:
+  TEST_APP_SLUG: stackql-smoke-app          # disposable app (deployed once with a hello-world revision)
+  TEST_APP_SLUG_B: stackql-smoke-app-b      # second disposable app, so the Link-header pagination check spans two pages
+  TEST_LAYER_SLUG: stackql-smoke-layer      # disposable layer attached to the app
+  TEST_DOMAIN: stackql-smoke.example.com    # disposable, never verified, domain registration
+
+# Environment-specific ids resolved by query at session start (each query must
+# return one row; its first column is the value). Set the variable in the
+# environment to skip the lookup. The deno suite creates everything it needs,
+# so nothing is derived up front; ids created mid-run are captured by the
+# `capture` block on a tier1.yaml case instead.
+derived_env: {}

@@ -1,5 +1,0 @@
-# fix relative broken links in generated markdown files
-sed -i 's|(#post-/domains/-domainId-/verify)|(https://deno-provider.stackql.io/services/domain/domains/#lifecycle-methods)|g' "provider-dev/openapi/src/deno/v00.00.00000/services/domain.yaml"
-sed -i 's|(#post-/domains/-domainId-/certificates/provision)|(https://deno-provider.stackql.io/services/domain/certificates/#lifecycle-methods)|g' "provider-dev/openapi/src/deno/v00.00.00000/services/domain.yaml"
-sed -i 's|(#post-/domains/-domainId-/certificates)|(https://deno-provider.stackql.io/services/domain/certificates/)|g' "provider-dev/openapi/src/deno/v00.00.00000/services/domain.yaml"
-sed -i 's|(#post-/organizations/-organizationId-/domains)|(https://deno-provider.stackql.io/services/domain/domains/)|g' "provider-dev/openapi/src/deno/v00.00.00000/services/domain.yaml"
