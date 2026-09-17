@@ -104,7 +104,11 @@ For Claude Desktop (`claude_desktop_config.json`) or any client configured with 
 
 The agent can then discover and query Deno Deploy using the server's tools (`list_resources`, `describe_resource`, `run_select_query` and so on). Credential values are resolved inside the server process and are never visible to the agent.
 
-## Apps
+## Example Queries
+
+Try the following queries using `stackql shell`, or run them from a script or CI pipeline with `stackql exec`.
+
+### Apps
 
 Every app in the organization, with its labels and the layers it references. Listings are paginated with a `Link` header and the provider follows it automatically, so a query returns every page:
 
@@ -148,7 +152,7 @@ FROM deno.apps.apps
 WHERE json_extract(labels, '$.custom.environment') = 'production';
 ```
 
-## Revisions (deployments)
+### Revisions (deployments)
 
 Revisions are listed per app; `status` is sent to the API when supplied:
 
@@ -202,7 +206,7 @@ FROM deno.revisions.revisions
 WHERE app = 'my-app';
 ```
 
-## Layers and environment variables
+### Layers and environment variables
 
 Layers hold environment variables shared across apps. One row per variable, expanding `env_vars` with `json_each`:
 
@@ -220,7 +224,7 @@ WHERE l.layer = 'shared-secrets'
 ORDER BY key;
 ```
 
-## Domains and certificates
+### Domains and certificates
 
 Domains registered to the organization, the DNS records to publish for verification, and the certificate set of one domain:
 
@@ -233,7 +237,7 @@ FROM deno.domains.certificates
 WHERE domain = 'example.com';
 ```
 
-## Analytics and runtime logs
+### Analytics and runtime logs
 
 Usage analytics come back as one row per 15-minute bucket (the API's table envelope is pivoted into columns); `since` and `until` are RFC 3339 timestamps:
 
@@ -257,7 +261,7 @@ AND "end" = '2026-09-14T01:00:00Z'
 AND level = 'error';
 ```
 
-## Provision, mutate and tear down
+### Provision, mutate and tear down
 
 Mutations use the same SQL grammar: `INSERT` creates, `UPDATE` sends a PATCH, `EXEC` invokes lifecycle methods and `DELETE` removes. Request body fields are supplied as columns using their API names; object and array fields are JSON strings.
 
