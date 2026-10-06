@@ -26,6 +26,7 @@ Query, provision and operate Deno Deploy using SQL - apps and their configuratio
 
 total services: __5__  
 total resources: __17__  
+source project: __[stackql-provider-deno](https://github.com/stackql-registry/stackql-provider-deno)__  
 
 :::
 
